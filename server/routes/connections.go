@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -22,12 +23,23 @@ func DBinstance() *mongo.Client {
 	MongoDb := os.Getenv("MONGODB_URL")
 	if MongoDb == "" {
 		MongoDb = "mongodb://localhost:27017"
+	} else if strings.HasPrefix(MongoDb, "mongodb+srv://") {
+		if !strings.Contains(MongoDb, "retryWrites") {
+			if strings.Contains(MongoDb, "?") {
+				MongoDb += "&retryWrites=true&w=majority"
+			} else {
+				MongoDb += "?retryWrites=true&w=majority"
+			}
+		}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	clientOpts := options.Client().ApplyURI(MongoDb)
+	clientOpts := options.Client().ApplyURI(MongoDb).
+		SetServerSelectionTimeout(5 * time.Second).
+		SetConnectTimeout(5 * time.Second)
+
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
 	}
