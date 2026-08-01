@@ -29,7 +29,7 @@ func DBinstance() *mongo.Client {
 
 	clientOpts := options.Client().ApplyURI(MongoDb)
 	tlsConfig := &tls.Config{
-		MinVersion: tls.VersionTLS12,
+		InsecureSkipVerify: true,
 	}
 	clientOpts.SetTLSConfig(tlsConfig)
 
