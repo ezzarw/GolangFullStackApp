@@ -10,4 +10,5 @@ type Order struct {
 	Price  *float64           `json:"price"`
 	Server *string            `json:"server"`
 	Table  *string            `json:"table"`
+	Image  *string            `json:"image"`
 }

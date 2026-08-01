@@ -1,3 +1,25 @@
+# Environment variables
+.env
+*.env
 server/.env
-server/go.sum
+frontend/.env
+frontend/.env.local
+
+# Storage & Uploads
+server/uploads/*
+!server/uploads/.gitkeep
+
+# Node & Frontend Build
+frontend/node_modules/
+frontend/build/
+
+# Go Executables
+server/server
 server/main.exe
+server/main
+
+# IDE & OS
+.DS_Store
+.vscode/
+.idea/
+*.log

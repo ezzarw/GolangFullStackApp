@@ -14,27 +14,29 @@ import (
 
 // DBinstance func
 func DBinstance() *mongo.Client {
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	if err := godotenv.Load(".env"); err != nil {
+		log.Println("Note: .env file not found or failed to load, reading system env vars")
 	}
 
 	MongoDb := os.Getenv("MONGODB_URL")
-
-	client, err := mongo.NewClient(options.Client().ApplyURI(MongoDb))
-	if err != nil {
-		log.Fatal(err)
+	if MongoDb == "" {
+		MongoDb = "mongodb://localhost:27017"
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-
 	defer cancel()
-	err = client.Connect(ctx)
+
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoDb))
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to MongoDB!")
+
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		log.Println("Warning: Failed to ping MongoDB:", err)
+	} else {
+		fmt.Println("Connected to MongoDB!")
+	}
 
 	return client
 }
@@ -44,10 +46,7 @@ var Client *mongo.Client = DBinstance()
 
 // OpenCollection is a function makes a connection with a collection :
 func OpenCollection(client *mongo.Client, collectionName string) *mongo.Collection {
-
 	var collection *mongo.Collection = client.Database("ClusterRestaurantApp01").Collection(collectionName)
-
 	return collection
 }
 
-// cluster0 = ClusterRestaurantApp01

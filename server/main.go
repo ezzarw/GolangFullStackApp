@@ -21,6 +21,15 @@ func main() {
 
 	router.Use(cors.Default())
 
+	// Ensure local uploads directory exists
+	_ = os.MkdirAll("./uploads", os.ModePerm)
+
+	// Serve uploaded files statically
+	router.Static("/uploads", "./uploads")
+
+	// UPLOAD MEDIA
+	router.POST("/upload", routes.UploadMedia)
+
 	// these are the endpoints
 	//CREATE
 	router.POST("/order/create", routes.AddOrder)
