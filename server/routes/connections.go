@@ -24,11 +24,11 @@ func DBinstance() *mongo.Client {
 	if MongoDb == "" {
 		MongoDb = "mongodb://localhost:27017"
 	} else if strings.HasPrefix(MongoDb, "mongodb+srv://") {
-		if !strings.Contains(MongoDb, "retryWrites") {
+		if !strings.Contains(MongoDb, "tlsInsecure") {
 			if strings.Contains(MongoDb, "?") {
-				MongoDb += "&retryWrites=true&w=majority"
+				MongoDb += "&tls=true&tlsInsecure=true&retryWrites=true&w=majority"
 			} else {
-				MongoDb += "?retryWrites=true&w=majority"
+				MongoDb += "?tls=true&tlsInsecure=true&retryWrites=true&w=majority"
 			}
 		}
 	}
@@ -37,8 +37,8 @@ func DBinstance() *mongo.Client {
 	defer cancel()
 
 	clientOpts := options.Client().ApplyURI(MongoDb).
-		SetServerSelectionTimeout(5 * time.Second).
-		SetConnectTimeout(5 * time.Second)
+		SetServerSelectionTimeout(10 * time.Second).
+		SetConnectTimeout(10 * time.Second)
 
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
