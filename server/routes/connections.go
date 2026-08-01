@@ -28,7 +28,8 @@ func DBinstance() *mongo.Client {
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoDb))
 	if err != nil {
-		log.Fatal(err)
+		log.Println("MongoDB connection error:", err)
+		return nil
 	}
 
 	err = client.Ping(ctx, nil)
@@ -46,6 +47,9 @@ var Client *mongo.Client = DBinstance()
 
 // OpenCollection is a function makes a connection with a collection :
 func OpenCollection(client *mongo.Client, collectionName string) *mongo.Collection {
+	if client == nil {
+		return nil
+	}
 	var collection *mongo.Collection = client.Database("ClusterRestaurantApp01").Collection(collectionName)
 	return collection
 }

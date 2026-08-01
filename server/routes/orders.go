@@ -119,18 +119,22 @@ func AddOrder(c *gin.Context) {
 
 // get all orders and return all the orders within the collection
 func GetOrders(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	if orderCollection == nil {
+		c.JSON(http.StatusOK, []bson.M{})
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	var orders []bson.M
+	var orders []bson.M = []bson.M{}
 	cursor, err := orderCollection.Find(ctx, bson.M{})
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusOK, []bson.M{})
 		return
 	}
 	if err = cursor.All(ctx, &orders); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusOK, []bson.M{})
 		return
 	}
 

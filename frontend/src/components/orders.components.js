@@ -121,7 +121,7 @@ const Orders = () => {
             }
         }).catch(err => {
             console.error("Error fetching orders:", err);
-            setErrorMsg("Tidak dapat terhubung ke server (Network Error). Pastikan server Go berjalan di http://localhost:8000.");
+            setErrorMsg(`Tidak dapat terhubung ke server (Network Error). Pastikan server Go API aktif di ${API_BASE_URL}.`);
         });
     }
 
