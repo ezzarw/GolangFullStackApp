@@ -27,6 +27,14 @@ func main() {
 	// Serve uploaded files statically
 	router.Static("/uploads", "./uploads")
 
+	// HEALTH CHECK
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok", "message": "Server is healthy"})
+	})
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+
 	// UPLOAD MEDIA
 	router.POST("/upload", routes.UploadMedia)
 
