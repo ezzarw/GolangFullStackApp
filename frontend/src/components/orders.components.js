@@ -4,7 +4,7 @@ import { Button, Form, Container, Modal } from 'react-bootstrap';
 import Order from './single-order.component';
 import '../App.css';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://golangfullstackapp-1mwy8mma.b4a.run';
 
 const Orders = () => {
     const [orders, setOrders] = useState([]);
