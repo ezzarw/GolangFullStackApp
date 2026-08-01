@@ -1,6 +1,6 @@
 module server
 
-go 1.22
+go 1.24.0
 
 require (
 	github.com/gin-contrib/cors v1.4.0
@@ -11,7 +11,6 @@ require (
 )
 
 require (
-	github.com/bytedance/gopkg v0.1.0 // indirect
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.5.2 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect

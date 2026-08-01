@@ -10,6 +10,9 @@ RUN go mod download
 # Copy source code
 COPY . .
 
+# Ensure go.mod & go.sum are perfectly synced
+RUN go mod tidy
+
 # Build lightweight static binary
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o server main.go
 
