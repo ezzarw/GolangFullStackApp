@@ -42,15 +42,21 @@ func DBinstance() *mongo.Client {
 	return client
 }
 
-// Client Database instance
-var Client *mongo.Client = DBinstance()
+var Client *mongo.Client
+
+func GetClient() *mongo.Client {
+	if Client == nil {
+		Client = DBinstance()
+	}
+	return Client
+}
 
 // OpenCollection is a function makes a connection with a collection :
 func OpenCollection(client *mongo.Client, collectionName string) *mongo.Collection {
-	if client == nil {
+	c := GetClient()
+	if c == nil {
 		return nil
 	}
-	var collection *mongo.Collection = client.Database("ClusterRestaurantApp01").Collection(collectionName)
-	return collection
+	return c.Database("ClusterRestaurantApp01").Collection(collectionName)
 }
 
