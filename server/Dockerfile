@@ -21,8 +21,8 @@ FROM alpine:latest
 
 WORKDIR /app
 
-# Install ca-certificates for secure network calls
-RUN apk --no-cache add ca-certificates
+# Install ca-certificates and tzdata for secure network/TLS calls
+RUN apk --no-cache add ca-certificates tzdata
 
 # Copy compiled binary from builder stage
 COPY --from=builder /app/server .

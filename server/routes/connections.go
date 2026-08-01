@@ -2,6 +2,7 @@ package routes
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"os"
@@ -23,10 +24,16 @@ func DBinstance() *mongo.Client {
 		MongoDb = "mongodb://localhost:27017"
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoDb))
+	clientOpts := options.Client().ApplyURI(MongoDb)
+	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+	}
+	clientOpts.SetTLSConfig(tlsConfig)
+
+	client, err := mongo.Connect(ctx, clientOpts)
 	if err != nil {
 		log.Println("MongoDB connection error:", err)
 		return nil
@@ -34,9 +41,9 @@ func DBinstance() *mongo.Client {
 
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		log.Println("Warning: Failed to ping MongoDB:", err)
+		log.Println("Warning: Failed to ping MongoDB Atlas:", err)
 	} else {
-		fmt.Println("Connected to MongoDB!")
+		fmt.Println("Connected to MongoDB Atlas!")
 	}
 
 	return client
