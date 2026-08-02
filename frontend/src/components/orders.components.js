@@ -31,10 +31,10 @@ const Orders = () => {
             const res = await axios.post(`${API_BASE_URL}/upload`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            return res.data ? res.data.url : "";
+            return res.data && res.data.url ? res.data.url : "";
         } catch (err) {
             console.error("Error uploading file:", err);
-            throw err;
+            return "";
         }
     }
 
