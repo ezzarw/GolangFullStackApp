@@ -2,7 +2,7 @@ import React from 'react';
 import 'bootstrap/dist/css/bootstrap.css';
 import {Button, Card, Row, Col} from 'react-bootstrap'
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://golangfullstackapp-1mwy8mma.b4a.run';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://golangfullstackapp-a094n7l1.b4a.run';
 
 const Order = ({orderData, setChangeWaiter,
 deleteSingleOrder, setChangeOrder}) => {
