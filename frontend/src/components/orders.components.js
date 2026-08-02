@@ -4,13 +4,23 @@ import { Button, Form, Container, Modal } from 'react-bootstrap';
 import Order from './single-order.component';
 import '../App.css';
 
-let envUrl = process.env.REACT_APP_API_URL || 'https://golangfullstackapp-a094n7l1.b4a.run';
-if (!envUrl || envUrl.includes('1mwy8mma')) {
-    envUrl = 'https://golangfullstackapp-a094n7l1.b4a.run';
-}
-const API_BASE_URL = envUrl;
+const DEFAULT_API_URL = 'https://golangfullstackapp-sdax53v7.b4a.run';
+
+const getInitialApiUrl = () => {
+    const saved = localStorage.getItem('CUSTOM_API_URL');
+    if (saved && saved.trim() !== '') return saved.trim();
+    const env = process.env.REACT_APP_API_URL;
+    if (env && !env.includes('1mwy8mma') && !env.includes('a094n7l1')) return env.trim();
+    return DEFAULT_API_URL;
+};
 
 const Orders = () => {
+    const [apiUrl, setApiUrl] = useState(getInitialApiUrl());
+    const [showSettings, setShowSettings] = useState(false);
+    const [tempApiUrl, setTempApiUrl] = useState(getInitialApiUrl());
+
+    const API_BASE_URL = apiUrl;
+
     const [orders, setOrders] = useState([]);
     const [errorMsg, setErrorMsg] = useState("");
 
@@ -24,7 +34,7 @@ const Orders = () => {
 
     useEffect(() => {
         getAllOrders();
-    }, []);
+    }, [apiUrl]);
 
     // uploads selected file to Go backend (/upload)
     async function uploadMediaFile() {
@@ -146,14 +156,20 @@ const Orders = () => {
 
     return (
         <div>
-            {/* add new order button */}
+            {/* add new order & backend config buttons */}
             <Container className="mt-3">
                 {errorMsg && (
-                    <div className="alert alert-warning text-center" role="alert">
-                        {errorMsg}
+                    <div className="alert alert-warning text-center d-flex justify-content-between align-items-center" role="alert">
+                        <span>{errorMsg}</span>
+                        <Button variant="outline-dark" size="sm" onClick={() => setShowSettings(true)}>⚙️ Settings</Button>
                     </div>
                 )}
-                <Button className='buttonAdd' onClick={() => { setSelectedFile(null); setAddNewOrder(true); }}>Add New Order</Button>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                    <Button className='buttonAdd' onClick={() => { setSelectedFile(null); setAddNewOrder(true); }}>Add New Order</Button>
+                    <Button variant="outline-warning" size="sm" onClick={() => setShowSettings(true)} style={{ color: '#EF6C00', borderColor: '#EF6C00' }}>
+                        ⚙️ Backend API Settings
+                    </Button>
+                </div>
             </Container>
 
             {/* list all current orders */}
@@ -233,6 +249,38 @@ const Orders = () => {
                 <Modal.Footer>
                     <Button className='primary-button' onClick={() => changeSingleOrder()}>Change</Button>
                     <Button className='secondary-button' onClick={() => setChangeOrder({ change: false, id: 0 })}>Cancel</Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* popup for editing backend API URL */}
+            <Modal className='customModal' show={showSettings} onHide={() => setShowSettings(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title className='modalTitle'>Backend API Configuration</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form.Group>
+                        <Form.Label className='customFormLabel'>Go Backend Server URL</Form.Label>
+                        <Form.Control 
+                            type="text" 
+                            value={tempApiUrl} 
+                            onChange={(e) => setTempApiUrl(e.target.value)}
+                            placeholder="https://golangfullstackapp-sdax53v7.b4a.run"
+                        />
+                        <Form.Text style={{ color: '#aaa', fontSize: '12px' }} className="mt-2 d-block">
+                            Masukkan URL backend Go aktif di Back4App. Jika URL PaaS berganti, ubah di sini.
+                        </Form.Text>
+                    </Form.Group>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button className='primary-button' onClick={() => {
+                        const val = tempApiUrl.trim();
+                        if (val) {
+                            localStorage.setItem('CUSTOM_API_URL', val);
+                            setApiUrl(val);
+                        }
+                        setShowSettings(false);
+                    }}>Save URL</Button>
+                    <Button className='secondary-button' onClick={() => setShowSettings(false)}>Cancel</Button>
                 </Modal.Footer>
             </Modal>
         </div>
