@@ -24,13 +24,21 @@ func DBinstance() *mongo.Client {
 	if MongoDb == "" {
 		MongoDb = "mongodb://localhost:27017"
 	} else if strings.HasPrefix(MongoDb, "mongodb+srv://") {
-		if !strings.Contains(MongoDb, "tlsInsecure") {
-			if strings.Contains(MongoDb, "?") {
-				MongoDb += "&tls=true&tlsInsecure=true&retryWrites=true&w=majority"
-			} else {
-				MongoDb += "?tls=true&tlsInsecure=true&retryWrites=true&w=majority"
+		cleanURI := strings.TrimSuffix(MongoDb, "/")
+		parts := strings.SplitN(cleanURI, "mongodb+srv://", 2)
+		if len(parts) == 2 {
+			credentialsAndDomain := parts[1]
+			if !strings.Contains(credentialsAndDomain, "/") {
+				cleanURI += "/ClusterRestaurantApp01?retryWrites=true&w=majority&tls=true&tlsInsecure=true"
+			} else if !strings.Contains(cleanURI, "retryWrites") {
+				if strings.Contains(cleanURI, "?") {
+					cleanURI += "&retryWrites=true&w=majority&tls=true&tlsInsecure=true"
+				} else {
+					cleanURI += "?retryWrites=true&w=majority&tls=true&tlsInsecure=true"
+				}
 			}
 		}
+		MongoDb = cleanURI
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
