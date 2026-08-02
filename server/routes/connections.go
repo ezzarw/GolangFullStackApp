@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -69,12 +70,27 @@ func DBinstance() *mongo.Client {
 	return client
 }
 
-var Client *mongo.Client
+var (
+	Client   *mongo.Client
+	clientMu sync.Mutex
+)
 
 func GetClient() *mongo.Client {
-	if Client == nil {
-		Client = DBinstance()
+	clientMu.Lock()
+	defer clientMu.Unlock()
+
+	if Client != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		if err := Client.Ping(ctx, nil); err == nil {
+			return Client
+		}
+		log.Println("Existing MongoDB client ping failed, re-establishing connection...")
+		_ = Client.Disconnect(ctx)
+		Client = nil
 	}
+
+	Client = DBinstance()
 	return Client
 }
 
