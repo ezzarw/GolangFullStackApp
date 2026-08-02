@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -25,7 +26,7 @@ func getOrderCollection() *mongo.Collection {
 	return OpenCollection(Client, "orders")
 }
 
-// upload media file to Supabase Storage
+// upload media file to Supabase Storage with local disk fallback
 func UploadMedia(c *gin.Context) {
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
@@ -34,59 +35,80 @@ func UploadMedia(c *gin.Context) {
 	}
 	defer file.Close()
 
+	ext := filepath.Ext(header.Filename)
+	uniqueFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+
 	supabaseUrl := os.Getenv("SUPABASE_URL")
 	supabaseSecretKey := os.Getenv("SUPABASE_SECRET_KEY")
 	supabaseBucket := os.Getenv("SUPABASE_BUCKET")
 
-	if supabaseUrl == "" || supabaseSecretKey == "" || supabaseBucket == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Konfigurasi Supabase di env belum lengkap",
-		})
+	// If Supabase environment variables are provided, try Supabase first
+	if supabaseUrl != "" && supabaseSecretKey != "" && supabaseBucket != "" {
+		fileBytes, err := io.ReadAll(file)
+		if err == nil {
+			targetURL := fmt.Sprintf("%s/storage/v1/object/%s/%s", supabaseUrl, supabaseBucket, uniqueFileName)
+			req, reqErr := http.NewRequest("POST", targetURL, bytes.NewReader(fileBytes))
+			if reqErr == nil {
+				req.Header.Set("Authorization", "Bearer "+supabaseSecretKey)
+				req.Header.Set("apiKey", supabaseSecretKey)
+				contentType := header.Header.Get("Content-Type")
+				if contentType == "" {
+					contentType = "application/octet-stream"
+				}
+				req.Header.Set("Content-Type", contentType)
+
+				client := &http.Client{Timeout: 30 * time.Second}
+				resp, doErr := client.Do(req)
+				if doErr == nil {
+					defer resp.Body.Close()
+					if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated {
+						publicURL := fmt.Sprintf("%s/storage/v1/object/public/%s/%s", supabaseUrl, supabaseBucket, uniqueFileName)
+						c.JSON(http.StatusOK, gin.H{
+							"message":  "File uploaded successfully to Supabase",
+							"url":      publicURL,
+							"filename": uniqueFileName,
+						})
+						return
+					}
+				}
+			}
+		}
+	}
+
+	// Fallback to local server disk storage
+	uploadDir := "./uploads"
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membuat direktori upload"})
 		return
 	}
 
-	ext := filepath.Ext(header.Filename)
-	uniqueFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
-
-	fileBytes, err := io.ReadAll(file)
+	savePath := filepath.Join(uploadDir, uniqueFileName)
+	out, err := os.Create(savePath)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membaca konten file"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan file ke disk"})
+		return
+	}
+	defer out.Close()
+
+	// Reset read pointer for local file copy
+	if _, err := file.Seek(0, 0); err != nil {
+		log.Println("Seek error:", err)
+	}
+
+	if _, err := io.Copy(out, file); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menulis file"})
 		return
 	}
 
-	targetURL := fmt.Sprintf("%s/storage/v1/object/%s/%s", supabaseUrl, supabaseBucket, uniqueFileName)
-	req, err := http.NewRequest("POST", targetURL, bytes.NewReader(fileBytes))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membuat HTTP request ke Supabase"})
-		return
+	scheme := "https"
+	if c.Request.TLS == nil && c.Request.Header.Get("X-Forwarded-Proto") == "http" {
+		scheme = "http"
 	}
+	localURL := fmt.Sprintf("%s://%s/uploads/%s", scheme, c.Request.Host, uniqueFileName)
 
-	req.Header.Set("Authorization", "Bearer "+supabaseSecretKey)
-	req.Header.Set("apiKey", supabaseSecretKey)
-	contentType := header.Header.Get("Content-Type")
-	if contentType == "" {
-		contentType = "application/octet-stream"
-	}
-	req.Header.Set("Content-Type", contentType)
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Gagal upload ke Supabase: %v", err)})
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		bodyResp, _ := io.ReadAll(resp.Body)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Supabase error (%d): %s", resp.StatusCode, string(bodyResp))})
-		return
-	}
-
-	publicURL := fmt.Sprintf("%s/storage/v1/object/public/%s/%s", supabaseUrl, supabaseBucket, uniqueFileName)
 	c.JSON(http.StatusOK, gin.H{
-		"message":  "File uploaded successfully",
-		"url":      publicURL,
+		"message":  "File uploaded successfully to local storage",
+		"url":      localURL,
 		"filename": uniqueFileName,
 	})
 }
