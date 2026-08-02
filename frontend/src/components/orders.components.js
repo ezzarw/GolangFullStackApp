@@ -4,7 +4,11 @@ import { Button, Form, Container, Modal } from 'react-bootstrap';
 import Order from './single-order.component';
 import '../App.css';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://golangfullstackapp-a094n7l1.b4a.run';
+let envUrl = process.env.REACT_APP_API_URL || 'https://golangfullstackapp-a094n7l1.b4a.run';
+if (!envUrl || envUrl.includes('1mwy8mma')) {
+    envUrl = 'https://golangfullstackapp-a094n7l1.b4a.run';
+}
+const API_BASE_URL = envUrl;
 
 const Orders = () => {
     const [orders, setOrders] = useState([]);
