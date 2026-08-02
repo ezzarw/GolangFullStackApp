@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"time"
 
 	"server/routes"
 
@@ -19,7 +20,15 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 
-	router.Use(cors.Default())
+	config := cors.Config{
+		AllowAllOrigins:  true,
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: false,
+		MaxAge:           12 * time.Hour,
+	}
+	router.Use(cors.New(config))
 
 	// Ensure local uploads directory exists
 	_ = os.MkdirAll("./uploads", os.ModePerm)
